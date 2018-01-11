@@ -5,6 +5,7 @@ type Rule struct {
 	Valid   func(c *Controller) bool
 
 	// Attempts to satisfy the rule, returns if success
+	// Also sets c.Lock to false upon completion
 	Satisfy func(c *Controller) bool
 }
 

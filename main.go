@@ -5,9 +5,11 @@ import ("net/http"
 )
 
 // Initialise a controller
-var controller = Controller{Machines: make(map[string]Machine),
-							Services: make(map[string]Service),
-							Pods: make(map[string]Pod)}
+var controller = Controller{
+	Machines: make(map[string]Machine),
+	Services: make(map[string]Service),
+	Pods: make(map[string]Pod),
+}
 
 // Handles requests to :8000 and redirects pased on POST or GET
 func indexHandler(w http.ResponseWriter, r *http.Request) {
