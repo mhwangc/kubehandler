@@ -3,7 +3,7 @@ package controller
 import (
 	"time"
 	"github.com/hantaowang/kubehandler/pkg/utils"
-	"github.com/hantaowang/kubehandler/pkg/lister"
+	"github.com/hantaowang/kubehandler/pkg/state"
 	"github.com/hantaowang/kubehandler/pkg/rules"
 )
 
@@ -64,16 +64,16 @@ func (c *Controller) checkRules() {
 // Given a controller, updates the Pod, Service, and Host attributes to correctly
 // reflect the current cluster state.
 func (c *Controller) GetClusterState() {
-	client := lister.GetClientOutOfCluster()
-	pods, err1 := lister.GetPods(client)
-	nodes, err2 := lister.GetNodes(client)
-	services, err3 := lister.GetServices(client)
+	client := state.GetClientOutOfCluster()
+	pods, err1 := state.GetPods(client)
+	nodes, err2 := state.GetNodes(client)
+	services, err3 := state.GetServices(client)
 	if utils.CheckAllErrors(err1, err2, err3) != nil {
 		panic(utils.CheckAllErrors(err1, err2, err3))
 	}
 
-	pods, services, err1 = lister.MatchPodsToServices(client, pods, services)
-	pods, nodes = lister.MatchPodsToNodes(pods, nodes)
+	pods, services, err1 = state.MatchPodsToServices(client, pods, services)
+	pods, nodes = state.MatchPodsToNodes(pods, nodes)
 	if utils.CheckAllErrors(err1) != nil {
 		panic(utils.CheckAllErrors(err1))
 	}
