@@ -3,13 +3,17 @@ package main
 import ("net/http"
 		"fmt"
 		"github.com/hantaowang/kubehandler/pkg/utils"
-		"github.com/hantaowang/kubehandler/pkg/controller")
+		"github.com/hantaowang/kubehandler/pkg/controller"
+		"github.com/hantaowang/kubehandler/pkg/state"
+)
 
 // Initialise a controller
 var control = controller.Controller{
 	Nodes: make(map[string]*utils.Node),
 	Services: make(map[string]*utils.Service),
 	Pods: make(map[string]*utils.Pod),
+	Client: state.GetClientOutOfCluster(),
+
 }
 
 // Handles requests to :8000 and redirects pased on POST or GET

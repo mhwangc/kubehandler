@@ -8,5 +8,3 @@ type Rule struct {
 	// Also sets c.Lock to false upon completion
 	Enforce		func(c *Controller) bool
 }
-
-//Exampl

@@ -4,6 +4,7 @@ import (
 	"time"
 	"github.com/hantaowang/kubehandler/pkg/utils"
 	"github.com/hantaowang/kubehandler/pkg/state"
+	"k8s.io/client-go/kubernetes"
 )
 
 // The controller object holds the state, timeline, queue of incoming events,
@@ -16,6 +17,7 @@ type Controller struct {
 	Services	map[string]*utils.Service
 	Lock		bool
 	Rules		[]Rule
+	Client		*kubernetes.Clientset
 }
 
 // Determines how often the controller checks its rules
@@ -63,15 +65,14 @@ func (c *Controller) checkRules() {
 // Given a controller, updates the Pod, Service, and Host attributes to correctly
 // reflect the current cluster state.
 func (c *Controller) GetClusterState() {
-	client := state.GetClientOutOfCluster()
-	pods, err1 := state.GetPods(client)
-	nodes, err2 := state.GetNodes(client)
-	services, err3 := state.GetServices(client)
+	pods, err1 := state.GetPods(c.Client)
+	nodes, err2 := state.GetNodes(c.Client)
+	services, err3 := state.GetServices(c.Client)
 	if utils.CheckAllErrors(err1, err2, err3) != nil {
 		panic(utils.CheckAllErrors(err1, err2, err3))
 	}
 
-	pods, services, err1 = state.MatchPodsToServices(client, pods, services)
+	pods, services, err1 = state.MatchPodsToServices(c.Client, pods, services)
 	pods, nodes = state.MatchPodsToNodes(pods, nodes)
 	if utils.CheckAllErrors(err1) != nil {
 		panic(utils.CheckAllErrors(err1))
@@ -90,11 +91,11 @@ func (c *Controller) GetClusterState() {
 }
 
 // Parses the event and then updates the state
-// Create functions are a little naive...
+// Create, update functions are a little naive...
 func (c *Controller) updateEvent(e utils.Event) {
 	c.Timeline = append(c.Timeline, e)
 
-	if e.Reason == "delete" {
+	if e.Reason == "deleted" {
 		if e.Kind == "pod" {
 			pod := c.Pods[e.Name]
 			pod.Service.Pods = utils.DeletePodNameOnce(pod.Service.Pods, e.Name)
@@ -105,7 +106,9 @@ func (c *Controller) updateEvent(e utils.Event) {
 		} else if e.Kind == "machine" {
 			delete(c.Nodes, e.Name)
 		}
-	} else if e.Reason == "create" {
+	} else if e.Reason == "created" {
+		go c.GetClusterState()
+	} else if e.Reason == "updated" {
 		go c.GetClusterState()
 	}
 
