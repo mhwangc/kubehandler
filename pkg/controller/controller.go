@@ -4,11 +4,7 @@ import (
 	"time"
 	"github.com/hantaowang/kubehandler/pkg/utils"
 	"github.com/hantaowang/kubehandler/pkg/state"
-	"github.com/hantaowang/kubehandler/pkg/rules"
 )
-
-// Determines how often the controller checks its rules
-const rulePeriod  = time.Millisecond * 500
 
 // The controller object holds the state, timeline, queue of incoming events,
 // and list of rules to follow.
@@ -19,8 +15,11 @@ type Controller struct {
 	Pods		map[string]*utils.Pod
 	Services	map[string]*utils.Service
 	Lock		bool
-	Rules		[]rules.Rule
+	Rules		[]Rule
 }
+
+// Determines how often the controller checks its rules
+const rulePeriod  = time.Millisecond * 500
 
 // Adds an event to the queue
 func (c *Controller) AddEvent(e utils.Event) {
@@ -28,7 +27,7 @@ func (c *Controller) AddEvent(e utils.Event) {
 }
 
 // Adds a rule to follow
-func (c *Controller) AddRule(r rules.Rule) {
+func (c *Controller) AddRule(r Rule) {
 	c.Rules = append(c.Rules, r)
 }
 
