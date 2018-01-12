@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/util/homedir"
 
-	"github.com/hantaowang/kubehandler/utils"
+	"github.com/hantaowang/kubehandler/pkg/utils"
 )
 
 func GetClientOutOfCluster() *kubernetes.Clientset{
@@ -100,11 +100,11 @@ func GetPodListOfService(clientset *kubernetes.Clientset, ser *utils.Service) ([
 	return podNames, nil
 }
 
-func MatchPodstoServices(clientset *kubernetes.Clientset, pods []*utils.Pod, sers []*utils.Service) ([]*utils.Pod, []*utils.Service, error) {
+func MatchPodsToServices(clientset *kubernetes.Clientset, pods []*utils.Pod, sers []*utils.Service) ([]*utils.Pod, []*utils.Service, error) {
 	for _, service := range sers {
 		podNames, err := GetPodListOfService(clientset, service)
 		if err != nil {
-			return nil, nil, err
+			return pods, sers, err
 		}
 		for _, name := range podNames {
 			for _, pod := range pods {
@@ -118,7 +118,7 @@ func MatchPodstoServices(clientset *kubernetes.Clientset, pods []*utils.Pod, ser
 	return pods, sers, nil
 }
 
-func MatchPodstoNodes(pods []*utils.Pod, nodes []*utils.Node) ([]*utils.Pod, []*utils.Node) {
+func MatchPodsToNodes(pods []*utils.Pod, nodes []*utils.Node) ([]*utils.Pod, []*utils.Node) {
 	for _, n := range nodes {
 		for _, pod := range pods {
 			if pod.HostIP == n.HostIP {

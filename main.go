@@ -2,13 +2,14 @@ package main
 
 import ("net/http"
 		"fmt"
-)
+		"github.com/hantaowang/kubehandler/pkg/utils"
+		"github.com/hantaowang/kubehandler/pkg/controller")
 
 // Initialise a controller
-var controller = Controller{
-	Machines: make(map[string]Machine),
-	Services: make(map[string]Service),
-	Pods: make(map[string]Pod),
+var control = controller.Controller{
+	Nodes: make(map[string]*utils.Node),
+	Services: make(map[string]*utils.Service),
+	Pods: make(map[string]*utils.Pod),
 }
 
 // Handles requests to :8000 and redirects pased on POST or GET
@@ -22,7 +23,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 // If GET, then returns to the user the timeline of events seen so far
 func getHandler(w http.ResponseWriter, r *http.Request) {
-	for _, e := range controller.Timeline {
+	for _, e := range control.Timeline {
 		fmt.Fprintf(w, e.Message + "\n")
 	}
 }
@@ -30,7 +31,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 // If POST, then builds the event and passes it to the controller for processing
 func postHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	e := Event{
+	e := utils.Event{
 		Namespace: r.Form["namespace"][0],
 		Kind:      r.Form["kind"][0],
 		Component: r.Form["component"][0],
@@ -40,7 +41,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		Name:      r.Form["name"][0],
 		Message:   r.Form["msg"][0],
 	}
-	controller.AddEvent(e)
+	control.AddEvent(e)
 	fmt.Fprintf(w, "Got POST Reqest")
 }
 
@@ -48,7 +49,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 
 // Runs the controller and starts the server
 func main() {
-	go controller.Run()
+	go control.Run()
 
 	http.HandleFunc("/", indexHandler)
 	http.ListenAndServe(":8000", nil)

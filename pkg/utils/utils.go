@@ -1,6 +1,6 @@
 package utils
 
-import "k8s.io/api/core/v1"
+import ("k8s.io/api/core/v1")
 
 // Pod, Node, Service, and Event objects
 
@@ -36,4 +36,21 @@ type Event struct {
 	Status    string
 	Name      string
 	Message	  string
+}
+
+func CheckAllErrors(errs ...error) error {
+	for _, err := range errs {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func DeleteItemOnce(lst []*Pod, name string) []*Pod {
+	for i, p := range lst {
+		if p.Name == name {
+			return append(lst[:i], lst[i+1:]...)
+		}
+	}
 }

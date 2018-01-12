@@ -1,8 +1,10 @@
-package main
+package controller
 
 import (
 	"time"
-	"github.com/hantaowang/kubehandler/utils"
+	"github.com/hantaowang/kubehandler/pkg/utils"
+	"github.com/hantaowang/kubehandler/pkg/lister"
+	"github.com/hantaowang/kubehandler/pkg/rules"
 )
 
 // Determines how often the controller checks its rules
@@ -17,7 +19,7 @@ type Controller struct {
 	Pods		map[string]*utils.Pod
 	Services	map[string]*utils.Service
 	Lock		bool
-	Rules		[]Rule
+	Rules		[]rules.Rule
 }
 
 // Adds an event to the queue
@@ -26,7 +28,7 @@ func (c *Controller) AddEvent(e utils.Event) {
 }
 
 // Adds a rule to follow
-func (c *Controller) AddRule(r Rule) {
+func (c *Controller) AddRule(r rules.Rule) {
 	c.Rules = append(c.Rules, r)
 }
 
@@ -59,12 +61,43 @@ func (c *Controller) checkRules() {
 	}
 }
 
+func (c *Controller) GetClusterState() {
+	client := lister.GetClientOutOfCluster()
+	pods, err1 := lister.GetPods(client)
+	nodes, err2 := lister.GetNodes(client)
+	services, err3 := lister.GetServices(client)
+	if utils.CheckAllErrors(err1, err2, err3) != nil {
+		panic(utils.CheckAllErrors(err1, err2, err3))
+	}
+
+	pods, services, err1 = lister.MatchPodsToServices(client, pods, services)
+	pods, nodes = lister.MatchPodsToNodes(pods, nodes)
+	if utils.CheckAllErrors(err1) != nil {
+		panic(utils.CheckAllErrors(err1))
+	}
+
+	for _, n := range nodes {
+		c.Nodes[n.Name] = n
+	}
+	for _, s := range services {
+		c.Services[s.Name] = s
+	}
+	for _, p := range pods {
+		c.Pods[p.Name] = p
+	}
+
+}
+
 // Parses the event and then updates the state
+// Create functions are a little naive...
 func (c *Controller) updateEvent(e utils.Event) {
 	c.Timeline = append(c.Timeline, e)
 
 	if e.Reason == "delete" {
 		if e.Kind == "pod" {
+			pod := c.Pods[e.Name]
+			pod.Service.Pods = utils.DeleteItemOnce(pod.Service.Pods, e.Name)
+			pod.Node.Pods = utils.DeleteItemOnce(pod.Node.Pods, e.Name)
 			delete(c.Pods, e.Name)
 		} else if e.Kind == "service" {
 			delete(c.Services, e.Name)
@@ -72,15 +105,8 @@ func (c *Controller) updateEvent(e utils.Event) {
 			delete(c.Nodes, e.Name)
 		}
 	} else if e.Reason == "create" {
-		if e.Kind == "pod" {
-			p := utils.Pod{Name: e.Name}
-			c.Pods[p.Name] = &p
-		} else if e.Kind == "service" {
-			s := utils.Service{Name: e.Name}
-			c.Services[s.Name] = &s
-		} else if e.Kind == "machine" {
-			m := utils.Node{Name: e.Name}
-			c.Nodes[m.Name] = &m
-		}
+		go c.GetClusterState()
 	}
+
+	go c.checkRules()
 }
