@@ -61,6 +61,8 @@ func (c *Controller) checkRules() {
 	}
 }
 
+// Given a controller, updates the Pod, Service, and Host attributes to correctly
+// reflect the current cluster state.
 func (c *Controller) GetClusterState() {
 	client := lister.GetClientOutOfCluster()
 	pods, err1 := lister.GetPods(client)
@@ -96,8 +98,8 @@ func (c *Controller) updateEvent(e utils.Event) {
 	if e.Reason == "delete" {
 		if e.Kind == "pod" {
 			pod := c.Pods[e.Name]
-			pod.Service.Pods = utils.DeleteItemOnce(pod.Service.Pods, e.Name)
-			pod.Node.Pods = utils.DeleteItemOnce(pod.Node.Pods, e.Name)
+			pod.Service.Pods = utils.DeletePodNameOnce(pod.Service.Pods, e.Name)
+			pod.Node.Pods = utils.DeletePodNameOnce(pod.Node.Pods, e.Name)
 			delete(c.Pods, e.Name)
 		} else if e.Kind == "service" {
 			delete(c.Services, e.Name)
