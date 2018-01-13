@@ -86,7 +86,10 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-
+// Returns pong on ping
+func pingHandler(w http.ResponseWriter, r *http.Response) {
+	fmt.Fprint(w, "pong")
+}
 
 // Runs the controller and starts the server
 func main() {
@@ -94,5 +97,7 @@ func main() {
 
 	fmt.Println("Running server on localhost:9000")
 	http.HandleFunc("/", indexHandler)
+	http.HandleFunc("/ping", pingHandler)
+
 	http.ListenAndServe(":9000", nil)
 }
