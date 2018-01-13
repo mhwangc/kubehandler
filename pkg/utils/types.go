@@ -17,6 +17,7 @@ type Node struct {
 	Name		string
 	Pods		[]*Pod
 	HostIP		string
+	Role		string
 	Object		v1.Node
 }
 

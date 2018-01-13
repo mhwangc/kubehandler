@@ -133,10 +133,14 @@ func MatchPodsToServices(clientset *kubernetes.Clientset, pods []*utils.Pod, ser
 // Modifies the pod and node objects to reflect this information.
 func MatchPodsToNodes(pods []*utils.Pod, nodes []*utils.Node) ([]*utils.Pod, []*utils.Node) {
 	for _, n := range nodes {
+		n.Role = "worker"
 		for _, pod := range pods {
 			if pod.HostIP == n.HostIP {
 				n.Pods = append(n.Pods, pod)
 				pod.Node = n
+				if len(pod.Name) >= 14 && pod.Name[0:14] == "kube-apiserver" {
+					n.Role = "master"
+				}
 			}
 		}
 	}

@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Cluster State</title>
+    <style>
+        td {
+            padding: 0 15px 0 15px;
+        }
+    </style>
 </head>
 <body>
-<h1>Pods</h1>
+<h2>Pods</h2>
 <table>
     <tr>
         <th>Name</th>
@@ -24,23 +29,33 @@
         </tr>
     {{end}}
 </table>
-<h1>Services</h1>
-<ul>
-    {{range .Services}}
-        <li>
-            {{.Name}}
-        </li>
-    {{end}}
-</ul>
-<h1>Nodes</h1>
-<ul>
-    {{range .Nodes}}
-        <li>
-            {{.Name}}
-        </li>
-    {{end}}
-</ul>
-<h1>Timeline</h1>
+<h2>Services</h2>
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Namespace</th>
+    </tr>
+{{range .Services}}
+    <tr>
+        <td>{{.Name}}</td>
+        <td>{{.Namespace}}</td>
+    </tr>
+{{end}}
+</table>
+<h2>Nodes</h2>
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Role</th>
+    </tr>
+{{range .Nodes}}
+    <tr>
+        <td>{{.Name}}</td>
+        <td>{{.Role}}</td>
+    </tr>
+{{end}}
+</table>
+<h2>Timeline</h2>
 <ul>
     {{range .Timeline}}
         <li>
