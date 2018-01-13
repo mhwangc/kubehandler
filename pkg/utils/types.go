@@ -36,4 +36,12 @@ type Event struct {
 	Status    string
 	Name      string
 	Message	  string
+	Time	  string
+}
+
+type WebPage struct {
+	Pods 		[]*Pod
+	Services	[]*Service
+	Nodes		[]*Node
+	Timeline	[]Event
 }

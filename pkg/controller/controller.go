@@ -5,19 +5,21 @@ import (
 	"github.com/hantaowang/kubehandler/pkg/utils"
 	"github.com/hantaowang/kubehandler/pkg/state"
 	"k8s.io/client-go/kubernetes"
+	"fmt"
 )
 
 // The controller object holds the state, timeline, queue of incoming events,
 // and list of rules to follow.
 type Controller struct {
-	FuzzyQueue  chan utils.Event
-	Timeline 	[]utils.Event
-	Nodes  		map[string]*utils.Node
-	Pods		map[string]*utils.Pod
-	Services	map[string]*utils.Service
-	Lock		bool
-	Rules		[]Rule
-	Client		*kubernetes.Clientset
+	FuzzyQueue  	chan utils.Event
+	UpdateRequest	bool
+	Timeline 		[]utils.Event
+	Nodes  			map[string]*utils.Node
+	Pods			map[string]*utils.Pod
+	Services		map[string]*utils.Service
+	Lock			bool
+	Rules			[]Rule
+	Client			*kubernetes.Clientset
 }
 
 // Determines how often the controller checks its rules
@@ -45,6 +47,11 @@ func (c *Controller) Run() {
 				go c.updateEvent(e)
 			case <- ticker.C:
 				go c.checkRules()
+			default:
+				if c.UpdateRequest {
+					// Blocking
+					c.GetClusterState()
+				}
 		}
 	}
 }
@@ -88,6 +95,9 @@ func (c *Controller) GetClusterState() {
 		c.Pods[p.Name] = p
 	}
 
+	c.UpdateRequest = false
+	fmt.Printf("[%s] Cluster State Updated\n", utils.GetTimeString())
+
 }
 
 // Parses the event and then updates the state
@@ -107,10 +117,10 @@ func (c *Controller) updateEvent(e utils.Event) {
 			delete(c.Nodes, e.Name)
 		}
 	} else if e.Reason == "created" {
-		go c.GetClusterState()
+		c.UpdateRequest = true
 	} else if e.Reason == "updated" {
-		go c.GetClusterState()
+		c.UpdateRequest = true
 	}
 
-	go c.checkRules()
+	c.checkRules()
 }

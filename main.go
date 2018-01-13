@@ -2,6 +2,7 @@ package main
 
 import ("net/http"
 		"fmt"
+		"html/template"
 		"github.com/hantaowang/kubehandler/pkg/utils"
 		"github.com/hantaowang/kubehandler/pkg/controller"
 		"github.com/hantaowang/kubehandler/pkg/state"
@@ -18,35 +19,71 @@ var control = controller.Controller{
 
 // Handles requests to :8000 and redirects pased on POST or GET
 func indexHandler(w http.ResponseWriter, r *http.Request) {
+
 	if r.Method == "GET" {
-		go getHandler(w, r)
+		getHandler(w, r)
 	} else if r.Method == "POST" {
-		go postHandler(w, r)
+		postHandler(w, r)
 	}
 }
 
 // If GET, then returns to the user the timeline of events seen so far
 func getHandler(w http.ResponseWriter, r *http.Request) {
-	for _, e := range control.Timeline {
-		fmt.Fprintf(w, e.Message + "\n")
+
+	pods := make([]*utils.Pod, 0, len(control.Pods))
+	services := make([]*utils.Service, 0, len(control.Services))
+	nodes := make([]*utils.Node, 0, len(control.Nodes))
+
+	for _, p := range control.Pods {pods = append(pods, p)}
+	for _, s := range control.Services {services = append(services, s)}
+	for _, n := range control.Nodes {nodes = append(nodes, n)}
+
+
+	podsSorted := make([]*utils.Pod, 0, len(control.Pods))
+	for _, s := range services {
+		for _, p := range pods {
+			if p.Service != nil && s.Name == p.Service.Name {
+				podsSorted = append(podsSorted, p)
+			}
+		}
 	}
+	for _, p := range pods {
+		if p.Service == nil {
+			podsSorted = append(podsSorted, p)
+		}
+	}
+
+	page := utils.WebPage{
+		Timeline: control.Timeline,
+		Pods: podsSorted,
+		Services: services,
+		Nodes: nodes,
+	}
+
+	tmpl := template.Must(template.ParseFiles("index.html"))
+	tmpl.Execute(w, page)
+
+	fmt.Printf("[%s] Got GET Reqest\n", utils.GetTimeString())
+
 }
 
 // If POST, then builds the event and passes it to the controller for processing
 func postHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	e := utils.Event{
-		Namespace: r.Form["namespace"][0],
+		Namespace: r.Form.Get("namespace"),
 		Kind:      r.Form["kind"][0],
 		Component: r.Form["component"][0],
 		Host:      r.Form["host"][0],
 		Reason:    r.Form["reason"][0],
 		Status:    r.Form["status"][0],
 		Name:      r.Form["name"][0],
-		Message:   r.Form["msg"][0],
+		Message:   r.Form["event"][0],
+		Time:      utils.GetTimeString(),
 	}
-	control.AddEvent(e)
-	fmt.Fprintf(w, "Got POST Reqest")
+	go control.AddEvent(e)
+	fmt.Printf("[%s] Got POST Reqest\n", utils.GetTimeString())
+
 }
 
 
@@ -55,6 +92,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	go control.Run()
 
+	fmt.Println("Running server on localhost:9000")
 	http.HandleFunc("/", indexHandler)
-	http.ListenAndServe(":8000", nil)
+	http.ListenAndServe(":9000", nil)
 }

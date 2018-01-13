@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cluster State</title>
+</head>
+<body>
+<h1>Pods</h1>
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Service</th>
+        <th>Node</th>
+    </tr>
+    {{range .Pods}}
+        <tr>
+            <td>{{.Name}}</td>
+            {{if .Service}}
+                <td>{{.Service.Name}}</td>
+            {{else}}
+                <td>kubernetes</td>
+            {{end}}
+            <td>{{.Node.Name}}</td>
+        </tr>
+    {{end}}
+</table>
+<h1>Services</h1>
+<ul>
+    {{range .Services}}
+        <li>
+            {{.Name}}
+        </li>
+    {{end}}
+</ul>
+<h1>Nodes</h1>
+<ul>
+    {{range .Nodes}}
+        <li>
+            {{.Name}}
+        </li>
+    {{end}}
+</ul>
+<h1>Timeline</h1>
+<ul>
+    {{range .Timeline}}
+        <li>
+            [{{.Time}}] {{.Message}}
+        </li>
+    {{end}}
+</ul>
+</body>
+</html>
