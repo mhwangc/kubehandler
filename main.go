@@ -14,7 +14,6 @@ var control = controller.Controller{
 	Services: make(map[string]*utils.Service),
 	Pods: make(map[string]*utils.Pod),
 	Client: state.GetClientOutOfCluster(),
-
 }
 
 // Handles requests to :8000 and redirects pased on POST or GET
@@ -87,7 +86,8 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Returns pong on ping
-func pingHandler(w http.ResponseWriter, r *http.Response) {
+func pingHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("[%s] Got PING Reqest\n", utils.GetTimeString())
 	fmt.Fprint(w, "pong")
 }
 
