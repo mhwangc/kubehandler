@@ -18,8 +18,4 @@ You will need the `k8s.io/client-go/...` library installed. Run with `go run mai
 build with `go build -o kubehandler main.go`.
 
 ### Preview
-#### Backend
-<img align="right" width="158" height="144" src="assets/backend.png" />
-
-#### Frontend
-<img align="right" width="158" height="144" src="assets/frontend.png" />
+<img src="assets/frontend.png" />
