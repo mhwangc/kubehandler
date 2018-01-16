@@ -11,9 +11,9 @@ import (
 // The controller object holds the state, timeline, queue of incoming events,
 // and list of rules to follow.
 type Controller struct {
-	FuzzyQueue  	chan utils.Event
+	FuzzyQueue  	chan *utils.Event
 	UpdateRequest	bool
-	Timeline 		[]utils.Event
+	Timeline 		[]*utils.Event
 	Nodes  			map[string]*utils.Node
 	Pods			map[string]*utils.Pod
 	Services		map[string]*utils.Service
@@ -26,7 +26,7 @@ type Controller struct {
 const rulePeriod  = time.Millisecond * 500
 
 // Adds an event to the queue
-func (c *Controller) AddEvent(e utils.Event) {
+func (c *Controller) AddEvent(e *utils.Event) {
 	c.FuzzyQueue <- e
 }
 
@@ -38,7 +38,7 @@ func (c *Controller) AddRule(r Rule) {
 // Every 500ms, checks that the rules are followed
 // Every time an object is added to the queue, updates the state
 func (c *Controller) Run() {
-	c.FuzzyQueue = make(chan utils.Event, 100)
+	c.FuzzyQueue = make(chan *utils.Event, 100)
 	ticker := time.NewTicker(rulePeriod)
 
 	for {
@@ -102,7 +102,7 @@ func (c *Controller) GetClusterState() {
 
 // Parses the event and then updates the state
 // Create, update functions are a little naive...
-func (c *Controller) updateEvent(e utils.Event) {
+func (c *Controller) updateEvent(e *utils.Event) {
 	c.Timeline = append(c.Timeline, e)
 
 	if e.Reason == "deleted" {
@@ -118,9 +118,13 @@ func (c *Controller) updateEvent(e utils.Event) {
 		}
 	} else if e.Reason == "created" {
 		c.UpdateRequest = true
+		if e.Kind == "machine" {
+			e.Message = "A new machine has been created: " + e.Name
+		}
 	} else if e.Reason == "updated" {
 		c.UpdateRequest = true
 	}
 
 	c.checkRules()
 }
+

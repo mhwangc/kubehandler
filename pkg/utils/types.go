@@ -44,5 +44,5 @@ type WebPage struct {
 	Pods 		[]*Pod
 	Services	[]*Service
 	Nodes		[]*Node
-	Timeline	[]Event
+	Timeline	[]*Event
 }

@@ -25,14 +25,6 @@ func DeletePodNameOnce(lst []*Pod, name string) []*Pod {
 	return lst
 }
 
-// Returns a list of all the values of a map
-func GetValuesList(m map[string]*interface{}) []interface{} {
-	r := make([]interface{}, 0, len(m))
-	for _, value := range m {
-		r = append(r, value)
-	}
-	return r
-}
 
 // Returns the string rep of the current time
 func GetTimeString() string {
