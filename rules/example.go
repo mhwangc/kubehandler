@@ -3,6 +3,7 @@ package rules
 import (
 	"k8s.io/client-go/kubernetes"
 	"github.com/hantaowang/kubehandler/pkg/controller"
+	"sync/atomic"
 )
 
 // Example rule
@@ -12,7 +13,7 @@ var NoMoreThanThreeMachines = controller.Rule{
 	},
 	Enforce: func(c *controller.Controller) bool {
 		err := deleteRandomMachine(c.Client)
-		c.Lock = false
+		atomic.StoreInt32(&c.Lock, 0)
 		if err != nil {
 			return false
 		}

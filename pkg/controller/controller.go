@@ -6,24 +6,25 @@ import (
 	"github.com/hantaowang/kubehandler/pkg/state"
 	"k8s.io/client-go/kubernetes"
 	"fmt"
+	"sync/atomic"
 )
 
 // The controller object holds the state, timeline, queue of incoming events,
 // and list of rules to follow.
 type Controller struct {
 	FuzzyQueue  	chan *utils.Event
-	UpdateRequest	bool
+	UpdateRequest	int32
 	Timeline 		[]*utils.Event
 	Nodes  			map[string]*utils.Node
 	Pods			map[string]*utils.Pod
 	Services		map[string]*utils.Service
-	Lock			bool
+	Lock			int32
 	Rules			[]Rule
 	Client			*kubernetes.Clientset
 }
 
 // Determines how often the controller checks its rules
-const rulePeriod  = time.Millisecond * 500
+const rulePeriod  = time.Second * 5
 
 // Adds an event to the queue
 func (c *Controller) AddEvent(e *utils.Event) {
@@ -47,11 +48,9 @@ func (c *Controller) Run() {
 				go c.updateEvent(e)
 			case <- ticker.C:
 				go c.checkRules()
-			default:
-				if c.UpdateRequest {
-					// Blocking
-					c.GetClusterState()
-				}
+			case atomic.LoadInt32(&c.UpdateRequest) == 1:
+				// Blocking
+				c.GetClusterState()
 		}
 	}
 }
@@ -61,8 +60,8 @@ func (c *Controller) Run() {
 func (c *Controller) checkRules() {
 	for _, r := range c.Rules {
 		if !r.Satisfied(c) {
-			if !c.Lock {
-				c.Lock = true
+			if atomic.LoadInt32(&c.Lock) == 0 {
+				atomic.StoreInt32(&c.Lock, 1)
 				go r.Enforce(c)
 			}
 		}
@@ -95,7 +94,7 @@ func (c *Controller) GetClusterState() {
 		c.Pods[p.Name] = p
 	}
 
-	c.UpdateRequest = false
+	atomic.StoreInt32(&c.UpdateRequest, 0)
 	fmt.Printf("[%s] Cluster State Updated\n", utils.GetTimeString())
 
 }
@@ -117,12 +116,12 @@ func (c *Controller) updateEvent(e *utils.Event) {
 			delete(c.Nodes, e.Name)
 		}
 	} else if e.Reason == "created" {
-		c.UpdateRequest = true
+		atomic.StoreInt32(&c.UpdateRequest, 1)
 		if e.Kind == "machine" {
 			e.Message = "A new machine has been created: " + e.Name
 		}
 	} else if e.Reason == "updated" {
-		c.UpdateRequest = true
+		atomic.StoreInt32(&c.UpdateRequest, 1)
 	}
 
 	c.checkRules()
