@@ -4,6 +4,7 @@ import ("github.com/hantaowang/kubehandler/pkg/utils"
 		"github.com/hantaowang/kubehandler/pkg/controller"
 		"github.com/hantaowang/kubehandler/pkg/state"
 		"github.com/hantaowang/kubehandler/pkg/server"
+		"github.com/hantaowang/kubehandler/rules"
 )
 
 
@@ -16,6 +17,7 @@ func main() {
 		Services: make(map[string]*utils.Service),
 		Pods: make(map[string]*utils.Pod),
 		Client: state.GetClientOutOfCluster(),
+		Rules: rules.Rules,
 	}
 
 	go control.Run()

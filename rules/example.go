@@ -1,13 +1,16 @@
-package controller
+package rules
 
-import "k8s.io/client-go/kubernetes"
+import (
+	"k8s.io/client-go/kubernetes"
+	"github.com/hantaowang/kubehandler/pkg/controller"
+)
 
 // Example rule
-var NoMoreThanThreeMachines = Rule{
-	Satisfied: func(c *Controller) bool {
+var NoMoreThanThreeMachines = controller.Rule{
+	Satisfied: func(c *controller.Controller) bool {
 		return len(c.Nodes) <= 3
 	},
-	Enforce: func(c *Controller) bool {
+	Enforce: func(c *controller.Controller) bool {
 		err := deleteRandomMachine(c.Client)
 		c.Lock = false
 		if err != nil {
