@@ -31,11 +31,6 @@ func (c *Controller) AddEvent(e *utils.Event) {
 	c.FuzzyQueue <- e
 }
 
-// Adds a trigger to follow
-func (c *Controller) AddTrigger(r Trigger) {
-	c.Triggers = append(c.Triggers, r)
-}
-
 // Every 500ms, checks that the triggers are followed
 // Every time an object is added to the queue, updates the state
 func (c *Controller) Run() {
