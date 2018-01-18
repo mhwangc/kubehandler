@@ -1,8 +1,8 @@
-package rules
+package triggers
 
 import "github.com/hantaowang/kubehandler/pkg/controller"
 
 // Initalizes list of Rules to be enforced
-var Rules = []controller.Rule{
+var Triggers = []controller.Trigger{
 	//NoMoreThanThreeMachines,
 }

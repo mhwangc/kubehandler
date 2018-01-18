@@ -12,7 +12,7 @@ import (
 	"github.com/hantaowang/kubehandler/pkg/utils"
 )
 
-// Creates a kubernetes outofcluster client with client-go
+// Creates a kubernetes out of cluster client with client-go
 func GetClientOutOfCluster() *kubernetes.Clientset{
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {

@@ -10,7 +10,7 @@ import (
 )
 
 // The controller object holds the state, timeline, queue of incoming events,
-// and list of rules to follow.
+// and list of triggers to follow.
 type Controller struct {
 	FuzzyQueue  	chan *utils.Event
 	UpdateRequest	int32
@@ -19,35 +19,35 @@ type Controller struct {
 	Pods			map[string]*utils.Pod
 	Services		map[string]*utils.Service
 	Lock			int32
-	Rules			[]Rule
+	Triggers		[]Trigger
 	Client			*kubernetes.Clientset
 }
 
-// Determines how often the controller checks its rules
-const rulePeriod  = time.Second * 5
+// Determines how often the controller checks its triggers
+const triggerPeriod  = time.Second * 5
 
 // Adds an event to the queue
 func (c *Controller) AddEvent(e *utils.Event) {
 	c.FuzzyQueue <- e
 }
 
-// Adds a rule to follow
-func (c *Controller) AddRule(r Rule) {
-	c.Rules = append(c.Rules, r)
+// Adds a trigger to follow
+func (c *Controller) AddTrigger(r Trigger) {
+	c.Triggers = append(c.Triggers, r)
 }
 
-// Every 500ms, checks that the rules are followed
+// Every 500ms, checks that the triggers are followed
 // Every time an object is added to the queue, updates the state
 func (c *Controller) Run() {
 	c.FuzzyQueue = make(chan *utils.Event, 100)
-	ticker := time.NewTicker(rulePeriod)
+	ticker := time.NewTicker(triggerPeriod)
 
 	for {
 		select {
 			case e := <- c.FuzzyQueue:
 				go c.updateEvent(e)
 			case <- ticker.C:
-				go c.checkRules()
+				go c.checkTriggers()
 			case atomic.LoadInt32(&c.UpdateRequest) == 1:
 				// Blocking
 				c.GetClusterState()
@@ -55,10 +55,10 @@ func (c *Controller) Run() {
 	}
 }
 
-// Checks if all rules are satisfied, and attempts to enforce the
-// first unsatisfied rule (but only if there is no lock).
-func (c *Controller) checkRules() {
-	for _, r := range c.Rules {
+// Checks if all triggers are satisfied, and attempts to enforce the
+// first unsatisfied trigger (but only if there is no lock).
+func (c *Controller) checkTriggers() {
+	for _, r := range c.Triggers {
 		if !r.Satisfied(c) {
 			if atomic.LoadInt32(&c.Lock) == 0 {
 				atomic.StoreInt32(&c.Lock, 1)
@@ -124,6 +124,6 @@ func (c *Controller) updateEvent(e *utils.Event) {
 		atomic.StoreInt32(&c.UpdateRequest, 1)
 	}
 
-	c.checkRules()
+	c.checkTriggers()
 }
 

@@ -1,4 +1,4 @@
-package rules
+package triggers
 
 import (
 	"k8s.io/client-go/kubernetes"
@@ -6,8 +6,8 @@ import (
 	"sync/atomic"
 )
 
-// Example rule
-var NoMoreThanThreeMachines = controller.Rule{
+// Example trigger
+var NoMoreThanThreeMachines = controller.Trigger{
 	Satisfied: func(c *controller.Controller) bool {
 		return len(c.Nodes) <= 3
 	},

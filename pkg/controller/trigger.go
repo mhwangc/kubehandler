@@ -1,10 +1,10 @@
 package controller
 
-type Rule struct {
-	// Returns if the rule is satisfied
+type Trigger struct {
+	// Returns if the trigger is satisfied
 	Satisfied	func(c *Controller) bool
 
-	// Attempts to satisfy the rule, returns if success
+	// Attempts to satisfy the trigger, returns if success
 	// Also atomically sets c.Lock to 0 upon completion
 	Enforce		func(c *Controller) bool
 }
