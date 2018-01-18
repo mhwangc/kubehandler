@@ -1,6 +1,9 @@
 package controller
 
 type Trigger struct {
+	Name		string
+	Desc		string
+
 	// Returns if the trigger is satisfied
 	Satisfied	func(c *Controller) bool
 

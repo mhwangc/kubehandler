@@ -55,6 +55,14 @@
     </tr>
 {{end}}
 </table>
+<h2>Triggers</h2>
+<ul>
+{{range .Triggers}}
+    <li>
+        {{.Name}}: {{.Desc}}
+    </li>
+{{end}}
+</ul>
 <h2>Timeline</h2>
 <ul>
     {{range .Timeline}}

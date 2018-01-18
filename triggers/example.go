@@ -8,6 +8,8 @@ import (
 
 // Example trigger
 var NoMoreThanThreeMachines = controller.Trigger{
+	Name: "NoMoreThanThreeMachines",
+	Desc: "Trigger that there cannot be more than 3 machines (workers and master) active at any given time",
 	Satisfied: func(c *controller.Controller) bool {
 		return len(c.Nodes) <= 3
 	},

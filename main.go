@@ -17,12 +17,14 @@ func main() {
 		Services: make(map[string]*utils.Service),
 		Pods: make(map[string]*utils.Pod),
 		Client: state.GetClientOutOfCluster(),
-		Rules: triggers.Triggers,
+		Triggers: triggers.Triggers,
+		FuzzyQueue: make(chan *utils.Event, 100),
+		Timeline: make([]*utils.Event, 0),
 	}
 
 	go control.Run()
 
-	s := server.Server{Control: control}
+	s := server.Server{Control: &control}
 	s.Run()
 
 }

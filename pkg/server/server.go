@@ -9,7 +9,15 @@ import (
 )
 
 type Server struct {
-	Control	controller.Controller
+	Control	*controller.Controller
+}
+
+type WebPage struct {
+	Pods 		[]*utils.Pod
+	Services	[]*utils.Service
+	Nodes		[]*utils.Node
+	Timeline	[]*utils.Event
+	Triggers	[]controller.Trigger
 }
 
 // Handles requests to :8000 and redirects pased on POST or GET
@@ -28,10 +36,12 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 	pods := make([]*utils.Pod, 0, len(s.Control.Pods))
 	services := make([]*utils.Service, 0, len(s.Control.Services))
 	nodes := make([]*utils.Node, 0, len(s.Control.Nodes))
+	triggers := make([]controller.Trigger, 0, len(s.Control.Triggers))
 
 	for _, p := range s.Control.Pods {pods = append(pods, p)}
 	for _, s := range s.Control.Services {services = append(services, s)}
 	for _, n := range s.Control.Nodes {nodes = append(nodes, n)}
+	for _, t := range s.Control.Triggers {triggers = append(triggers, t) }
 
 
 	podsSorted := make([]*utils.Pod, 0, len(s.Control.Pods))
@@ -48,14 +58,15 @@ func (s *Server) getHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	page := utils.WebPage{
+	page := WebPage{
 		Timeline: s.Control.Timeline,
 		Pods: podsSorted,
 		Services: services,
 		Nodes: nodes,
+		Triggers: triggers,
 	}
 
-	tmpl := template.Must(template.ParseFiles("index.html"))
+	tmpl := template.Must(template.ParseFiles("pkg/server/index.html"))
 	tmpl.Execute(w, page)
 
 	fmt.Printf("[%s] Got GET Reqest\n", utils.GetTimeString())

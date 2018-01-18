@@ -39,18 +39,20 @@ func (c *Controller) AddTrigger(r Trigger) {
 // Every 500ms, checks that the triggers are followed
 // Every time an object is added to the queue, updates the state
 func (c *Controller) Run() {
-	c.FuzzyQueue = make(chan *utils.Event, 100)
 	ticker := time.NewTicker(triggerPeriod)
 
 	for {
 		select {
 			case e := <- c.FuzzyQueue:
+				c.Timeline = append(c.Timeline, e)
 				go c.updateEvent(e)
 			case <- ticker.C:
 				go c.checkTriggers()
-			case atomic.LoadInt32(&c.UpdateRequest) == 1:
-				// Blocking
-				c.GetClusterState()
+			default:
+				if atomic.LoadInt32(&c.UpdateRequest) == 1 {
+					// Blocking
+					c.GetClusterState()
+				}
 		}
 	}
 }
@@ -102,7 +104,6 @@ func (c *Controller) GetClusterState() {
 // Parses the event and then updates the state
 // Create, update functions are a little naive...
 func (c *Controller) updateEvent(e *utils.Event) {
-	c.Timeline = append(c.Timeline, e)
 
 	if e.Reason == "deleted" {
 		if e.Kind == "pod" {
