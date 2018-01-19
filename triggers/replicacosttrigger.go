@@ -26,9 +26,9 @@ var ReplicasWithinCostAll = controller.Trigger{
         defer atomic.StoreInt32(&c.Lock, 0)
         for _, s := range c.Services {
             if float64(len(s.Pods)) * costPerPod > maxCostPerService {
-                dif := maxCostPerService - len(s.Pods) * costPerPod
+                dif := maxCostPerService - float64(len(s.Pods)) * costPerPod
                 delPod := "-" + string(int(math.Ceil(dif / costPerPod)))
-                errRep := kubefunc.replicaUpdate(c.Client, s.Name, delPod)
+                errRep := kubefunc.ReplicaUpdate(c.Client, s.Name, delPod)
                 if errRep != nil {
                     return false
                 }

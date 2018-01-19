@@ -2,6 +2,7 @@ package kubefunc
 
 import (
     "fmt"
+    "strconv"
 
     apiv1 "k8s.io/api/core/v1"
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,7 +12,7 @@ import (
 )
 
 // Updates the replica count of Deployment METANAME by the value QUANTITY
-func replicaUpdate(clientset *kubernetes.Clientset, metaname string, quantity string) error {
+func ReplicaUpdate(clientset *kubernetes.Clientset, metaname string, quantity string) error {
     // Getting deployments
     deploymentsClient := clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)
 
@@ -50,3 +51,5 @@ func replicaUpdate(clientset *kubernetes.Clientset, metaname string, quantity st
     fmt.Printf("Updated replica count of Deployment %v\n", metaname)
     return nil
 }
+
+func int32Ptr(i int32) *int32 { return &i }
