@@ -13,13 +13,12 @@ var NoMoreThanThreeMachines = controller.Trigger{
 	Satisfied: func(c *controller.Controller) bool {
 		return len(c.Nodes) <= 3
 	},
-	Enforce: func(c *controller.Controller) bool {
+	Enforce: func(c *controller.Controller) error {
 		err := deleteRandomMachine(c.Client)
-		atomic.StoreInt32(&c.Lock, 0)
 		if err != nil {
-			return false
+			return err
 		}
-		return true
+		return nil
 	},
 }
 

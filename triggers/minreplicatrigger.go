@@ -20,16 +20,15 @@ var MinReplicasAll = controller.Trigger{
         }
         return true
     },
-    Enforce: func(c *controller.Controller) bool {
-        defer atomic.StoreInt32(&c.Lock, 0)
+    Enforce: func(c *controller.Controller) error {
         for _, s := range c.Services {
             if len(s.Pods) < minReplicas {
                 errRep := kubefunc.ReplicaUpdate(c.Client, s.Name, string(minReplicas - len(s.Pods)))
                 if errRep != nil {
-                    return false
+                    return errRep
                 }
             }
         }
-        return true
+        return nil
     },
 }

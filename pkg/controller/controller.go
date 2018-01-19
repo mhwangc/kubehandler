@@ -55,14 +55,44 @@ func (c *Controller) Run() {
 // Checks if all triggers are satisfied, and attempts to enforce the
 // first unsatisfied trigger (but only if there is no lock).
 func (c *Controller) checkTriggers() {
-	for _, r := range c.Triggers {
-		if !r.Satisfied(c) {
-			if atomic.LoadInt32(&c.Lock) == 0 {
-				atomic.StoreInt32(&c.Lock, 1)
-				go r.Enforce(c)
+	for _, t := range c.Triggers {
+		if !t.Satisfied(c) {
+			if atomic.CompareAndSwapInt32(&c.Lock, 0, 1) {
+				e := &utils.Event{
+					Message:   fmt.Sprintf("Attempt to enforce trigger %s", t.Name),
+					Time:      utils.GetTimeString(),
+				}
+				c.Timeline = append(c.Timeline, e)
+				go c.enforceTrigger(t)
 			}
 		}
 	}
+}
+
+// Attempts to enforce a trigger. Handles all atomic operations.
+func (c *Controller) enforceTrigger(t Trigger) {
+	fmt.Printf("[%s] Attempting to enforce %s", utils.GetTimeString(), t.Name)
+	e := t.Enforce(c)
+	i := 0
+	for e != nil || i < 5{
+		e = t.Enforce(c)
+		i ++
+	}
+	var eve utils.Event
+	if i == 5 {
+		fmt.Printf("[%s] %s enforcement failed 5 times!\n", utils.GetTimeString(), t.Name)
+		eve = utils.Event{
+			Message:   fmt.Sprintf("Failed to enforce trigger %s", t.Name),
+			Time:      utils.GetTimeString(),
+		}
+	} else {
+		eve = utils.Event{
+			Message:   fmt.Sprintf("Successful enforcement of trigger %s", t.Name),
+			Time:      utils.GetTimeString(),
+		}
+	}
+	c.Timeline = append(c.Timeline, &eve)
+	atomic.StoreInt32(&c.Lock, 0)
 }
 
 // Given a controller, updates the Pod, Service, and Host attributes to correctly

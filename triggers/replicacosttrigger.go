@@ -22,18 +22,17 @@ var ReplicasWithinCostAll = controller.Trigger{
         }
         return true
     },
-    Enforce: func(c *controller.Controller) bool {
-        defer atomic.StoreInt32(&c.Lock, 0)
+    Enforce: func(c *controller.Controller) error {
         for _, s := range c.Services {
             if float64(len(s.Pods)) * costPerPod > maxCostPerService {
                 dif := maxCostPerService - float64(len(s.Pods)) * costPerPod
                 delPod := "-" + string(int(math.Ceil(dif / costPerPod)))
                 errRep := kubefunc.ReplicaUpdate(c.Client, s.Name, delPod)
                 if errRep != nil {
-                    return false
+                    return errRep
                 }
             }
         }
-        return true
+        return nil
     },
 }
