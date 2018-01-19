@@ -88,8 +88,6 @@ func (s *Server) postHandler(w http.ResponseWriter, r *http.Request) {
 		Time:      utils.GetTimeString(),
 	}
 	go s.Control.AddEvent(&e)
-	fmt.Printf("[%s] Got POST Reqest\n", utils.GetTimeString())
-
 }
 
 // Returns pong on ping

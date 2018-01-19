@@ -3,7 +3,6 @@ package triggers
 import (
     "github.com/hantaowang/kubehandler/pkg/controller"
     "github.com/hantaowang/kubehandler/pkg/kubefunc"
-    "sync/atomic"
     "fmt"
     "math"
 )
@@ -16,7 +15,7 @@ var ReplicasWithinCostAll = controller.Trigger{
     Desc: fmt.Sprintf("Each service cannot cost more than $%d", maxCostPerService),
     Satisfied: func(c *controller.Controller) bool {
         for _, s := range c.Services {
-            if float64(len(s.Pods)) * costPerPod > maxCostPerService {
+            if s.Name != "kube-dns" && s.Name != "kubernetes" && float64(len(s.Pods)) * costPerPod > maxCostPerService {
                 return false
             }
         }
@@ -24,10 +23,10 @@ var ReplicasWithinCostAll = controller.Trigger{
     },
     Enforce: func(c *controller.Controller) error {
         for _, s := range c.Services {
-            if float64(len(s.Pods)) * costPerPod > maxCostPerService {
+            if s.Name != "kube-dns" && s.Name != "kubernetes" && float64(len(s.Pods)) * costPerPod > maxCostPerService {
                 dif := maxCostPerService - float64(len(s.Pods)) * costPerPod
-                delPod := "-" + string(int(math.Ceil(dif / costPerPod)))
-                errRep := kubefunc.ReplicaUpdate(c.Client, s.Name, delPod)
+                delPod := int(math.Floor(dif / costPerPod))
+                errRep := kubefunc.ReplicaUpdate(c.Client, s.Name, int32(delPod))
                 if errRep != nil {
                     return errRep
                 }

@@ -14,6 +14,7 @@ import (
 type Controller struct {
 	FuzzyQueue  	chan *utils.Event
 	UpdateRequest	int32
+	RuleRequest		int32
 	Timeline 		[]*utils.Event
 	Nodes  			map[string]*utils.Node
 	Pods			map[string]*utils.Pod
@@ -24,7 +25,7 @@ type Controller struct {
 }
 
 // Determines how often the controller checks its triggers
-const triggerPeriod  = time.Second * 5
+const triggerPeriod  = time.Second * 30
 
 // Adds an event to the queue
 func (c *Controller) AddEvent(e *utils.Event) {
@@ -42,11 +43,16 @@ func (c *Controller) Run() {
 				c.Timeline = append(c.Timeline, e)
 				go c.updateEvent(e)
 			case <- ticker.C:
-				go c.checkTriggers()
+				if atomic.LoadInt32(&c.RuleRequest) == 1 {
+					// Blocking
+					c.checkTriggers()
+					atomic.StoreInt32(&c.RuleRequest, 0)
+				}
 			default:
 				if atomic.LoadInt32(&c.UpdateRequest) == 1 {
 					// Blocking
 					c.GetClusterState()
+					atomic.StoreInt32(&c.UpdateRequest, 0)
 				}
 		}
 	}
@@ -59,11 +65,12 @@ func (c *Controller) checkTriggers() {
 		if !t.Satisfied(c) {
 			if atomic.CompareAndSwapInt32(&c.Lock, 0, 1) {
 				e := &utils.Event{
-					Message:   fmt.Sprintf("Attempt to enforce trigger %s", t.Name),
+					Message:   fmt.Sprintf("Attempt to enforce trigger %s\n", t.Name),
 					Time:      utils.GetTimeString(),
 				}
 				c.Timeline = append(c.Timeline, e)
-				go c.enforceTrigger(t)
+				c.enforceTrigger(t)
+				return
 			}
 		}
 	}
@@ -71,23 +78,18 @@ func (c *Controller) checkTriggers() {
 
 // Attempts to enforce a trigger. Handles all atomic operations.
 func (c *Controller) enforceTrigger(t Trigger) {
-	fmt.Printf("[%s] Attempting to enforce %s", utils.GetTimeString(), t.Name)
+	fmt.Printf("[%s] Attempting to enforce %s\n", utils.GetTimeString(), t.Name)
 	e := t.Enforce(c)
-	i := 0
-	for e != nil || i < 5{
-		e = t.Enforce(c)
-		i ++
-	}
 	var eve utils.Event
-	if i == 5 {
-		fmt.Printf("[%s] %s enforcement failed 5 times!\n", utils.GetTimeString(), t.Name)
+	if e != nil {
+		fmt.Printf("[%s] Failed to enforce trigger %s with error %s\n", utils.GetTimeString(), t.Name, e)
 		eve = utils.Event{
-			Message:   fmt.Sprintf("Failed to enforce trigger %s", t.Name),
+			Message:   fmt.Sprintf("Failed to enforce trigger %s with error %s\n", utils.GetTimeString(), t.Name, e),
 			Time:      utils.GetTimeString(),
 		}
 	} else {
 		eve = utils.Event{
-			Message:   fmt.Sprintf("Successful enforcement of trigger %s", t.Name),
+			Message:   fmt.Sprintf("Successful enforcement of trigger %s\n", t.Name),
 			Time:      utils.GetTimeString(),
 		}
 	}
@@ -121,7 +123,6 @@ func (c *Controller) GetClusterState() {
 		c.Pods[p.Name] = p
 	}
 
-	atomic.StoreInt32(&c.UpdateRequest, 0)
 	fmt.Printf("[%s] Cluster State Updated\n", utils.GetTimeString())
 
 }
@@ -134,7 +135,12 @@ func (c *Controller) updateEvent(e *utils.Event) {
 		if e.Kind == "pod" {
 			pod := c.Pods[e.Name]
 			pod.Service.Pods = utils.DeletePodNameOnce(pod.Service.Pods, e.Name)
-			pod.Node.Pods = utils.DeletePodNameOnce(pod.Node.Pods, e.Name)
+			fmt.Println(pod)
+			fmt.Println(pod.Node)
+			fmt.Println(pod.Node.Pods)
+			a := pod.Node.Pods
+			b := e.Name
+			pod.Node.Pods = utils.DeletePodNameOnce(a, b)
 			delete(c.Pods, e.Name)
 		} else if e.Kind == "service" {
 			delete(c.Services, e.Name)
@@ -149,7 +155,10 @@ func (c *Controller) updateEvent(e *utils.Event) {
 	} else if e.Reason == "updated" {
 		atomic.StoreInt32(&c.UpdateRequest, 1)
 	}
+	fmt.Printf("[%s] %s\n", utils.GetTimeString(), e.Message)
 
-	c.checkTriggers()
+	atomic.StoreInt32(&c.RuleRequest, 1)
+
+
 }
 

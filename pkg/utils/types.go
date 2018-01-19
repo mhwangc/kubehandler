@@ -11,6 +11,7 @@ type Pod struct {
 	HostIP		string
 	Namespace	string
 	Object		v1.Pod
+	Type		string
 }
 
 type Node struct {
@@ -19,6 +20,7 @@ type Node struct {
 	HostIP		string
 	Role		string
 	Object		v1.Node
+	Type		string
 }
 
 type Service struct {

@@ -29,6 +29,12 @@ func DeletePodNameOnce(lst []*Pod, name string) []*Pod {
 // Returns the string rep of the current time
 func GetTimeString() string {
 	t := time.Now()
-	timeString := fmt.Sprintf("%d %s %d, %d:%d:%d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+	timeString := fmt.Sprintf("%s %s, %s:%s:%s",
+		t.Month(),
+		fmt.Sprintf("%02d", t.Day()),
+		fmt.Sprintf("%02d", t.Hour()),
+		fmt.Sprintf("%02d", t.Minute()),
+		fmt.Sprintf("%02d", t.Second()),
+	)
 	return timeString
 }

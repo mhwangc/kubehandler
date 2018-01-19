@@ -3,7 +3,6 @@ package triggers
 import (
 	"k8s.io/client-go/kubernetes"
 	"github.com/hantaowang/kubehandler/pkg/controller"
-	"sync/atomic"
 )
 
 // Example trigger
