@@ -70,13 +70,14 @@ func (c *Controller) checkTriggers() {
 				}
 				c.Timeline = append(c.Timeline, e)
 				c.enforceTrigger(t)
+				atomic.StoreInt32(&c.Lock, 0)
 				return
 			}
 		}
 	}
 }
 
-// Attempts to enforce a trigger. Handles all atomic operations.
+// Attempts to enforce a trigger.
 func (c *Controller) enforceTrigger(t Trigger) {
 	fmt.Printf("[%s] Attempting to enforce %s\n", utils.GetTimeString(), t.Name)
 	e := t.Enforce(c)
@@ -94,7 +95,6 @@ func (c *Controller) enforceTrigger(t Trigger) {
 		}
 	}
 	c.Timeline = append(c.Timeline, &eve)
-	atomic.StoreInt32(&c.Lock, 0)
 }
 
 // Given a controller, updates the Pod, Service, and Host attributes to correctly
@@ -135,12 +135,7 @@ func (c *Controller) updateEvent(e *utils.Event) {
 		if e.Kind == "pod" {
 			pod := c.Pods[e.Name]
 			pod.Service.Pods = utils.DeletePodNameOnce(pod.Service.Pods, e.Name)
-			fmt.Println(pod)
-			fmt.Println(pod.Node)
-			fmt.Println(pod.Node.Pods)
-			a := pod.Node.Pods
-			b := e.Name
-			pod.Node.Pods = utils.DeletePodNameOnce(a, b)
+			pod.Node.Pods = utils.DeletePodNameOnce(pod.Node.Pods, e.Name)
 			delete(c.Pods, e.Name)
 		} else if e.Kind == "service" {
 			delete(c.Services, e.Name)

@@ -29,7 +29,7 @@ func ReplicaUpdate(clientset *kubernetes.Clientset, metaname string, quantity in
 
         // Modify replica count
         oldRep := result.Spec.Replicas
-        result.Spec.Replicas = int32Ptr(*oldRep + int32(quantity))
+        result.Spec.Replicas = int32Ptr(*oldRep + quantity)
         if *result.Spec.Replicas < int32(1) {
             result.Spec.Replicas = int32Ptr(1)
         }
