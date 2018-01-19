@@ -23,6 +23,7 @@ var ReplicasWithinCostAll = controller.Trigger{
         return true
     },
     Enforce: func(c *controller.Controller) bool {
+        defer atomic.StoreInt32(&c.Lock, 0)
         for _, s := range c.Services {
             if float64(len(s.Pods)) * costPerPod > maxCostPerService {
                 dif := maxCostPerService - len(s.Pods) * costPerPod
