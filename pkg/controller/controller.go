@@ -7,6 +7,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"fmt"
 	"sync/atomic"
+	"math/rand"
 )
 
 // The controller object holds the state, timeline, queue of incoming events,
@@ -58,22 +59,23 @@ func (c *Controller) Run() {
 	}
 }
 
-// Checks if all triggers are satisfied, and attempts to enforce the
+// Checks if all triggers are satisfied, in random order and attempts to enforce the
 // first unsatisfied trigger (but only if there is no lock).
 func (c *Controller) checkTriggers() {
-	for _, t := range c.Triggers {
-		if !t.Satisfied(c) {
-			if atomic.CompareAndSwapInt32(&c.Lock, 0, 1) {
+	if atomic.CompareAndSwapInt32(&c.Lock, 0, 1) {
+		for _, i := range rand.Perm(len(c.Triggers)) {
+			t := c.Triggers[i]
+			if !t.Satisfied(c) {
 				e := &utils.Event{
 					Message:   fmt.Sprintf("Attempt to enforce trigger %s\n", t.Name),
 					Time:      utils.GetTimeString(),
 				}
 				c.Timeline = append(c.Timeline, e)
 				c.enforceTrigger(t)
-				atomic.StoreInt32(&c.Lock, 0)
-				return
+				return // Only enforce one trigger per period, for now
 			}
 		}
+		atomic.StoreInt32(&c.Lock, 0) // Set lock back
 	}
 }
 
@@ -89,6 +91,9 @@ func (c *Controller) enforceTrigger(t Trigger) {
 			Time:      utils.GetTimeString(),
 		}
 	} else {
+		for !t.Satisfied(c) {
+			time.Sleep(time.Second * 3)
+		}
 		eve = utils.Event{
 			Message:   fmt.Sprintf("Successful enforcement of trigger %s\n", t.Name),
 			Time:      utils.GetTimeString(),
