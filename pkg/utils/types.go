@@ -3,15 +3,23 @@ package utils
 import ("k8s.io/api/core/v1"
 )
 
-// Pod, Node, Service, and Event objects
+// Pod, Container Node, Service, and Event objects
 type Pod struct {
 	Name		string
 	Service		*Service
 	Node		*Node
+	Containers	[]*Container
 	HostIP		string
 	Namespace	string
 	Object		v1.Pod
 	Type		string
+}
+
+type Container struct {
+	Name		string
+	Pod			*Pod
+	Image		string
+	Object		v1.Container
 }
 
 type Node struct {

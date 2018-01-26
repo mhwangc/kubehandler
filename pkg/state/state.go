@@ -49,6 +49,16 @@ func GetPods(clientset *kubernetes.Clientset) ([]*utils.Pod, error) {
 			Namespace: pod.Namespace,
 			HostIP: pod.Status.HostIP,
 			Object: pod}
+		containers := make([]*utils.Container, len(pod.Spec.Containers))
+		for j, c := range pod.Spec.Containers {
+			containers[j] = &utils.Container{
+				Name: c.Name,
+				Image: c.Image,
+				Pod: cluster[i],
+				Object: c,
+			}
+		}
+		cluster[i].Containers = containers
 	}
 	return cluster, nil
 }
