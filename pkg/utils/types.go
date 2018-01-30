@@ -19,7 +19,7 @@ type Container struct {
 	Name		string
 	Pod			*Pod
 	Image		string
-	Object		v1.Container
+	ID			string
 }
 
 type Node struct {

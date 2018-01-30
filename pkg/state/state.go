@@ -10,6 +10,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 
 	"github.com/hantaowang/kubehandler/pkg/utils"
+	"fmt"
 )
 
 // Creates a kubernetes out of cluster client with client-go
@@ -50,13 +51,14 @@ func GetPods(clientset *kubernetes.Clientset) ([]*utils.Pod, error) {
 			HostIP: pod.Status.HostIP,
 			Object: pod}
 		containers := make([]*utils.Container, len(pod.Spec.Containers))
-		for j, c := range pod.Spec.Containers {
+		for j, c := range pod.Status.ContainerStatuses {
 			containers[j] = &utils.Container{
-				Name: c.Name,
+				Name:  c.Name,
 				Image: c.Image,
-				Pod: cluster[i],
-				Object: c,
+				ID:    c.ContainerID,
+				Pod:   cluster[i],
 			}
+			fmt.Println(c.ContainerID)
 		}
 		cluster[i].Containers = containers
 	}
