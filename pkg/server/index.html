@@ -47,11 +47,13 @@
     <tr>
         <th>Name</th>
         <th>Role</th>
+        <th>IP</th>
     </tr>
 {{range .Nodes}}
     <tr>
         <td>{{.Name}}</td>
         <td>{{.Role}}</td>
+        <td>{{.InternIP}}</td>
     </tr>
 {{end}}
 </table>

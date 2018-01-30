@@ -25,7 +25,8 @@ type Container struct {
 type Node struct {
 	Name		string
 	Pods		[]*Pod
-	HostIP		string
+	InternIP	string
+	ExternIP	string
 	Role		string
 	Object		v1.Node
 	Type		string

@@ -93,7 +93,8 @@ func GetNodes(clientset *kubernetes.Clientset) ([]*utils.Node, error) {
 	for i, n := range nodes.Items {
 		cluster[i] = &utils.Node{
 			Name: n.Name,
-			HostIP: n.Status.Addresses[0].Address,
+			InternIP: n.Status.Addresses[0].Address,
+			ExternIP: n.Status.Addresses[1].Address,
 			Object: n}
 	}
 	return cluster, nil
@@ -145,7 +146,7 @@ func MatchPodsToNodes(pods []*utils.Pod, nodes []*utils.Node) ([]*utils.Pod, []*
 	for _, n := range nodes {
 		n.Role = "worker"
 		for _, pod := range pods {
-			if pod.HostIP == n.HostIP {
+			if pod.HostIP == n.InternIP {
 				n.Pods = append(n.Pods, pod)
 				pod.Node = n
 				if len(pod.Name) >= 14 && pod.Name[0:14] == "kube-apiserver" {

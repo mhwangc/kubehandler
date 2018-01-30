@@ -139,7 +139,9 @@ func (c *Controller) updateEvent(e *utils.Event) {
 	if e.Reason == "deleted" {
 		if e.Kind == "pod" {
 			pod := c.Pods[e.Name]
-			pod.Service.Pods = utils.DeletePodNameOnce(pod.Service.Pods, e.Name)
+			if pod.Service != nil {
+				pod.Service.Pods = utils.DeletePodNameOnce(pod.Service.Pods, e.Name)
+			}
 			pod.Node.Pods = utils.DeletePodNameOnce(pod.Node.Pods, e.Name)
 			delete(c.Pods, e.Name)
 		} else if e.Kind == "service" {

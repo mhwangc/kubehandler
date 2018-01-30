@@ -12,7 +12,7 @@ const maxCostPerService float64 = 8.0
 
 var ReplicasWithinCostAll = controller.Trigger{
     Name: "ReplicasWithinCost",
-    Desc: fmt.Sprintf("Each service cannot cost more than $%d", maxCostPerService),
+    Desc: fmt.Sprintf("Each service cannot cost more than $%f", maxCostPerService),
     Satisfied: func(c *controller.Controller) bool {
         for _, s := range c.Services {
             if s.Name != "kube-dns" && s.Name != "kubernetes" && float64(len(s.Pods)) * costPerPod > maxCostPerService {

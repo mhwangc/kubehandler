@@ -3,8 +3,6 @@ package utils
 import (
 	"time"
 	"fmt"
-	"math/rand"
-	"math"
 )
 
 // Returns the first error that is not nil
